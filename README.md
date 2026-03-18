@@ -25,6 +25,14 @@
 
 ---
 
+<p align="center">
+  <img src="assets/dropdown.png" width="320" alt="0xFocus Menu Bar Dropdown" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="assets/settings.png" width="420" alt="0xFocus Settings Window" />
+</p>
+
+---
+
 ## The Problem
 
 You're deep in interview prep. DSA in the morning, system design after lunch, company-specific rounds in the evening. You *think* you studied HLD for 2 hours today, but it was actually 45 minutes. You have an interview with Google on Thursday and you keep forgetting to prep for it.

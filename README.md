@@ -19,6 +19,10 @@
 
 > **Note:** This project was entirely vibe-coded in a single session with [Claude Code](https://claude.ai/claude-code). From idea to working app in one conversation. No Figma, no PRD, no sprint planning. Just vibes.
 
+> *"I spent 6 years learning to build software. Then an AI built my side project in one evening while I described what I wanted in broken sentences. I'm not upset. I'm free."*
+
+> *The irony is not lost on me that I built an app to prepare for interviews at companies that are probably building the AI that will make my job obsolete. But hey, at least I'll be well-prepared when I interview at the company that replaces me.*
+
 ---
 
 ## The Problem
@@ -194,6 +198,18 @@ This app was built from scratch in a single conversation with Claude Code. No pl
 4. Added mobile notifications, AI-importable schedules, and interview countdowns on the fly
 
 The entire codebase was generated, debugged, and refined through natural language. It's not perfect, but it works and it ships. That's the vibe.
+
+### Philosophical Musings from the Grind
+
+- **On the state of software engineering:** I used an AI to build an app that helps me prepare for interviews where they'll ask me to reverse a linked list on a whiteboard. The future is here and it's deeply absurd.
+
+- **On vibe coding:** My grandfather built furniture with his hands. My father built software with a keyboard. I built software by having a conversation. My kids will probably just think about it really hard. Progress?
+
+- **On interview prep:** There's something poetically tragic about spending 200 hours preparing to prove you can do a job you've already been doing for years. But here we are, tracking every minute of it with a menu bar app. At least the app is nice.
+
+- **On building tools instead of studying:** If you're reading this README instead of doing your DSA practice, you're procrastinating. Close this tab. Open LeetCode. I believe in you.
+
+- **On the existential dread:** This app has a weekly summary feature. I recommend not looking at it on Sundays. Some numbers are better left unknown.
 
 ## License
 

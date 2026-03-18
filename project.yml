@@ -1,0 +1,27 @@
+name: 0xFocus
+options:
+  bundleIdPrefix: com.mrinal
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "16.0"
+  minimumXcodeGenVersion: "2.30"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+targets:
+  0xFocus:
+    type: application
+    platform: macOS
+    sources:
+      - 0xFocus
+    settings:
+      base:
+        INFOPLIST_FILE: 0xFocus/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.mrinal.0xFocus
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: false
+        CODE_SIGN_ENTITLEMENTS: 0xFocus/0xFocus.entitlements

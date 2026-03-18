@@ -65,9 +65,9 @@ struct MenuContentView: View {
             }
 
             // Subject list
-            VStack(spacing: 1) {
-                ForEach(scheduleStore.allSubjects()) { subject in
-                    subjectRow(subject)
+            VStack(spacing: 4) {
+                ForEach(scheduleStore.todayBlocks()) { block in
+                    blockRow(block)
                 }
             }
             .padding(.vertical, 4)
@@ -102,6 +102,8 @@ struct MenuContentView: View {
             .padding(.bottom, 8)
         }
         .frame(width: 310)
+        .frame(maxHeight: 600)
+        .fixedSize(horizontal: false, vertical: true)
         .background(
             VisualEffectBackground(material: .popover, blendingMode: .behindWindow)
         )
@@ -250,9 +252,10 @@ struct MenuContentView: View {
         }
     }
 
-    // MARK: - Subject Row
+    // MARK: - Block Row
 
-    private func subjectRow(_ subject: Subject) -> some View {
+    private func blockRow(_ block: ScheduleBlock) -> some View {
+        let subject = Subject(name: block.subject)
         let isInterview = { if case .interview = sessionManager.state { return true }; return false }()
         let isActive: Bool = {
             switch sessionManager.state {
@@ -267,15 +270,11 @@ struct MenuContentView: View {
             return false
         }()
         let todayDuration = sessionManager.todayDuration(for: subject.rawValue)
-        let blocks = scheduleStore.todayBlocks().filter { $0.subject == subject.rawValue }
-        let scheduledDuration = blocks.reduce(0) { $0 + $1.durationInterval }
+        let scheduledDuration = block.durationInterval
 
-        // Build schedule time string for this subject
-        let scheduleTimeStr: String? = {
-            guard let first = blocks.first else { return nil }
-            let start = TimeFormatting.formatTime(hour: first.startHour, minute: first.startMinute)
-            let last = blocks.last!
-            let end = TimeFormatting.formatTime(hour: last.endHour, minute: last.endMinute)
+        let scheduleTimeStr: String = {
+            let start = TimeFormatting.formatTime(hour: block.startHour, minute: block.startMinute)
+            let end = TimeFormatting.formatTime(hour: block.endHour, minute: block.endMinute)
             return "\(start) – \(end)"
         }()
 
@@ -290,11 +289,9 @@ struct MenuContentView: View {
                     Text(subject.displayName)
                         .font(.subheadline)
                         .fontWeight(isActive ? .semibold : .regular)
-                    if let timeStr = scheduleTimeStr {
-                        Text(timeStr)
-                            .font(.system(.caption2, design: .monospaced))
-                            .foregroundStyle(.tertiary)
-                    }
+                    Text(scheduleTimeStr)
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(.tertiary)
                 }
 
                 Spacer()

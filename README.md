@@ -7,6 +7,7 @@
     Track study hours by subject. Schedule your day. Never miss an interview.
   </p>
   <p align="center">
+    <a href="https://0xfocus.mrinal.dev">Website</a> &bull;
     <a href="#features">Features</a> &bull;
     <a href="#install">Install</a> &bull;
     <a href="#schedule-format">Schedule Format</a> &bull;

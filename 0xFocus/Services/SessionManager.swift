@@ -432,6 +432,16 @@ final class SessionManager {
         return csv
     }
 
+    func resetTodayData() {
+        stopSession()
+        guard let context = modelContext else { return }
+        let sessions = todaySessions()
+        for session in sessions {
+            context.delete(session)
+        }
+        try? context.save()
+    }
+
     func resetAllData() {
         stopSession()
         guard let context = modelContext else { return }

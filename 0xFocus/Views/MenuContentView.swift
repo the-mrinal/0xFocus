@@ -374,6 +374,8 @@ struct MenuContentView: View {
 
     // MARK: - Today's Stats
 
+    @State private var confirmingReset = false
+
     private var todayStats: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
@@ -386,6 +388,37 @@ struct MenuContentView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            if sessionManager.todayTotalDuration() > 0 {
+                if confirmingReset {
+                    Button {
+                        sessionManager.resetTodayData()
+                        confirmingReset = false
+                    } label: {
+                        Text("Confirm")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.red)
+                    }
+                    .buttonStyle(.plain)
+                    Button {
+                        confirmingReset = false
+                    } label: {
+                        Text("Cancel")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Button {
+                        confirmingReset = true
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Reset today's study time")
+                }
+            }
             Text(TimeFormatting.formatDuration(sessionManager.todayTotalDuration()))
                 .font(.system(.title3, design: .monospaced))
                 .fontWeight(.medium)

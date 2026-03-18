@@ -17,6 +17,7 @@ final class SessionManager {
     var elapsedTime: TimeInterval = 0
     var activeCompany: String?
     var showSeconds: Bool = UserDefaults.standard.bool(forKey: "showSeconds")
+    var coloredRows: Bool = UserDefaults.standard.object(forKey: "coloredRows") == nil ? true : UserDefaults.standard.bool(forKey: "coloredRows")
     var state: SessionState = .idle
     var breakTimeRemaining: TimeInterval = 0
 
@@ -43,6 +44,11 @@ final class SessionManager {
         UserDefaults.standard.set(showSeconds, forKey: "showSeconds")
     }
 
+    func toggleColoredRows() {
+        coloredRows.toggle()
+        UserDefaults.standard.set(coloredRows, forKey: "coloredRows")
+    }
+
     // MARK: - Menu Bar Text
 
     /// Nearest upcoming interview within 24 hours (for menu bar suffix)
@@ -50,56 +56,37 @@ final class SessionManager {
         scheduleStore?.upcomingInterviews().first { $0.isWithinHours(24) && $0.timeUntilStart() != nil }
     }
 
-    var menuBarText: String {
-        // Interview active — full takeover
-        if case .interview(let company) = state {
-            let elapsed = TimeFormatting.formatDuration(elapsedTime, showSeconds: showSeconds)
-            return "🎯 Interview @ \(company)  \(elapsed)"
-        }
-
-        var base: String
-
+    var menuBarIcon: String {
         switch state {
+        case .studying: return "play.circle.fill"
+        case .overtime: return "exclamationmark.circle.fill"
+        case .onBreak: return "cup.and.saucer.fill"
+        case .pendingStart: return "bell.circle.fill"
+        case .interview: return "target"
+        case .idle: return "pause.circle"
+        }
+    }
+
+    var menuBarText: String {
+        switch state {
+        case .interview(let company):
+            return "\(company) \(TimeFormatting.formatDuration(elapsedTime, showSeconds: showSeconds))"
+
         case .studying(let subject):
-            let sub = Subject.from(rawValue: subject)
-            let elapsed = TimeFormatting.formatDuration(elapsedTime, showSeconds: showSeconds)
-            if let block = currentScheduledBlock(for: subject) {
-                let scheduled = TimeFormatting.formatDuration(block.durationInterval)
-                base = "\(sub.emoji) \(sub.displayName)  \(elapsed) / \(scheduled)"
-            } else {
-                base = "\(sub.emoji) \(sub.displayName)  \(elapsed)"
-            }
+            return "\(subject) \(TimeFormatting.formatDuration(elapsedTime, showSeconds: showSeconds))"
 
         case .overtime(let subject):
-            let sub = Subject.from(rawValue: subject)
-            let elapsed = TimeFormatting.formatDuration(elapsedTime, showSeconds: showSeconds)
-            base = "⚠️ \(sub.displayName) (overtime)  \(elapsed)"
+            return "\(subject) \(TimeFormatting.formatDuration(elapsedTime, showSeconds: showSeconds))"
 
-        case .onBreak(let nextSubject, _):
-            let remaining = TimeFormatting.formatDuration(max(0, breakTimeRemaining), showSeconds: showSeconds)
-            base = "☕ Break  \(remaining) → \(nextSubject)"
+        case .onBreak(let next, _):
+            return "\(TimeFormatting.formatDuration(max(0, breakTimeRemaining))) → \(next)"
 
         case .pendingStart(let subject, _):
-            base = "⚠️ \(subject) scheduled — tap to start"
+            return "\(subject)"
 
         case .idle:
-            if let next = scheduleStore?.nextBlock() {
-                let time = TimeFormatting.formatTime(hour: next.startHour, minute: next.startMinute)
-                base = "Next: \(next.subject) at \(time)"
-            } else {
-                base = "⏸ Break"
-            }
-
-        case .interview:
-            base = ""
+            return ""
         }
-
-        // Append nearest interview countdown (within 24h)
-        if let interview = nearestUpcomingInterview {
-            base += "  •  🎯 \(interview.company) \(interview.countdownText())"
-        }
-
-        return base
     }
 
     // MARK: - Session Control
@@ -417,5 +404,48 @@ final class SessionManager {
 
     func todayTotalDuration() -> TimeInterval {
         todaySessions().reduce(0) { $0 + $1.duration }
+    }
+
+    // MARK: - Export & Reset
+
+    func allSessions() -> [StudySession] {
+        guard let context = modelContext else { return [] }
+        let descriptor = FetchDescriptor<StudySession>(sortBy: [SortDescriptor(\.startTime)])
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    func exportToCSV() -> String {
+        let sessions = allSessions()
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+
+        var csv = "Subject,Company,Start Time,End Time,Duration (minutes)\n"
+        for session in sessions {
+            let start = dateFormatter.string(from: session.startTime)
+            let end = session.endTime.map { dateFormatter.string(from: $0) } ?? "active"
+            let duration = Int(session.duration / 60)
+            let company = session.company ?? ""
+            // Escape commas in fields
+            let subject = session.subject.contains(",") ? "\"\(session.subject)\"" : session.subject
+            csv += "\(subject),\(company),\(start),\(end),\(duration)\n"
+        }
+        return csv
+    }
+
+    func resetAllData() {
+        stopSession()
+        guard let context = modelContext else { return }
+        let sessions = allSessions()
+        for session in sessions {
+            context.delete(session)
+        }
+        try? context.save()
+
+        // Reset notification tracking
+        notifiedBlockEndIds.removeAll()
+        notifiedBreakEndIds.removeAll()
+        notifiedReminderIds.removeAll()
+        sentInterviewReminders.removeAll()
+        interviewNotified = false
     }
 }

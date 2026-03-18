@@ -40,13 +40,20 @@ struct _0xFocusApp: App {
                     }
                 }
         } label: {
-            Text(sessionManager.menuBarText)
+            HStack(spacing: 2) {
+                Image(systemName: sessionManager.menuBarIcon)
+                    .font(.system(size: 10))
+                Text(sessionManager.menuBarText)
+                    .font(.system(size: 10, weight: .regular, design: .monospaced))
+            }
         }
         .menuBarExtraStyle(.window)
 
-        Window("Schedule Editor", id: "schedule-editor") {
+        Window("0xFocus Settings", id: "schedule-editor") {
             ScheduleEditorWindow()
                 .environment(scheduleStore)
+                .environment(sessionManager)
+                .modelContainer(container)
                 .onAppear { NSApp.setActivationPolicy(.regular) }
                 .onDisappear {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -56,7 +63,7 @@ struct _0xFocusApp: App {
                     }
                 }
         }
-        .defaultSize(width: 520, height: 450)
+        .defaultSize(width: 580, height: 500)
 
         Window("Weekly Summary", id: "weekly-summary") {
             WeeklySummaryView()

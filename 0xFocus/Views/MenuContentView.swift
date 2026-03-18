@@ -7,28 +7,42 @@ struct MenuContentView: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 6) {
+            // State header in a glass card
             stateHeader
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal, 8)
+                .padding(.top, 8)
 
-            // Upcoming interviews card (next 7 days)
+            // Date + time header
+            HStack {
+                Text(currentDateString())
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(currentTimeString())
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+
+            // Upcoming interviews
             if case .interview = sessionManager.state {
-                // Already showing interview in header
             } else {
                 let upcoming = scheduleStore.upcomingInterviews().filter { $0.timeUntilStart() != nil }
                 if !upcoming.isEmpty {
-                    Divider()
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 5) {
                         Text("UPCOMING INTERVIEWS")
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.orange)
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.orange.opacity(0.8))
+                            .tracking(1.5)
 
                         ForEach(upcoming.prefix(5)) { interview in
                             HStack(spacing: 6) {
                                 Text("🎯")
-                                    .font(.caption)
+                                    .font(.caption2)
                                 Text(interview.company)
                                     .font(.caption)
                                     .fontWeight(.medium)
@@ -39,100 +53,78 @@ struct MenuContentView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.orange.opacity(0.06))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(.orange.opacity(0.15), lineWidth: 0.5)
+                    )
+                    .padding(.horizontal, 8)
                 }
             }
 
-            Divider()
-
-            VStack(spacing: 2) {
+            // Subject list
+            VStack(spacing: 1) {
                 ForEach(scheduleStore.allSubjects()) { subject in
                     subjectRow(subject)
                 }
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, 4)
+            .padding(.horizontal, 4)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal, 8)
 
-            Divider()
-
+            // Today's stats
             todayStats
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 14)
                 .padding(.vertical, 8)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal, 8)
 
-            Divider()
-
-            VStack(spacing: 2) {
-                Button {
-                    sessionManager.toggleShowSeconds()
-                } label: {
-                    HStack {
-                        Label(
-                            sessionManager.showSeconds ? "Hide Seconds" : "Show Seconds",
-                            systemImage: sessionManager.showSeconds ? "clock.badge.checkmark" : "clock"
-                        )
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-
-                Button {
+            // Actions
+            VStack(spacing: 1) {
+                menuButton(icon: "gearshape", label: "Settings...") {
                     NSApp.activate(ignoringOtherApps: true)
                     openWindow(id: "schedule-editor")
-                } label: {
-                    Label("Edit Schedule...", systemImage: "calendar")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-
-                Button {
-                    NSApp.activate(ignoringOtherApps: true)
-                    openWindow(id: "weekly-summary")
-                } label: {
-                    Label("Weekly Summary...", systemImage: "chart.bar")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-
-                Button {
-                    NSApp.activate(ignoringOtherApps: true)
-                    openWindow(id: "mobile-settings")
-                } label: {
-                    Label("Mobile Notifications...", systemImage: "iphone")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
 
                 Divider()
+                    .padding(.horizontal, 8)
 
-                Button {
+                menuButton(icon: "power", label: "Quit 0xFocus") {
                     NSApplication.shared.terminate(nil)
-                } label: {
-                    Label("Quit 0xFocus", systemImage: "power")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
             }
             .padding(.vertical, 4)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal, 8)
+            .padding(.bottom, 8)
         }
-        .frame(width: 300)
+        .frame(width: 310)
+        .background(
+            VisualEffectBackground(material: .popover, blendingMode: .behindWindow)
+        )
+    }
+
+    // MARK: - Menu Button
+
+    private func menuButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 16)
+                Text(label)
+                    .font(.subheadline)
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(GlassButtonStyle())
     }
 
     // MARK: - State Header
@@ -141,7 +133,7 @@ struct MenuContentView: View {
         Group {
             switch sessionManager.state {
             case .interview(let company):
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("🎯")
                         Text("Interview @ \(company)")
@@ -150,36 +142,43 @@ struct MenuContentView: View {
                         Spacer()
                     }
                     Text(TimeFormatting.formatDuration(sessionManager.elapsedTime, showSeconds: sessionManager.showSeconds))
-                        .font(.system(.title2, design: .monospaced))
+                        .font(.system(.title, design: .monospaced))
+                        .fontWeight(.light)
                         .foregroundStyle(.orange)
                     Text("All schedules paused")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
 
             case .studying(let subjectName):
                 let subject = Subject.from(rawValue: subjectName)
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Circle().fill(subject.color).frame(width: 8, height: 8)
-                        Text("Active: \(subject.displayName)")
+                        Circle()
+                            .fill(subject.color)
+                            .frame(width: 8, height: 8)
+                            .shadow(color: subject.color.opacity(0.6), radius: 4)
+                        Text(subject.displayName)
                             .font(.headline)
                         Spacer()
                         Button("Stop") { sessionManager.stopSession() }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
+                            .tint(subject.color)
                     }
                     Text(TimeFormatting.formatDuration(sessionManager.elapsedTime, showSeconds: sessionManager.showSeconds))
-                        .font(.system(.title2, design: .monospaced))
+                        .font(.system(.title, design: .monospaced))
+                        .fontWeight(.light)
                         .foregroundStyle(subject.color)
                 }
 
             case .overtime(let subjectName):
                 let subject = Subject.from(rawValue: subjectName)
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.yellow)
+                            .shadow(color: .yellow.opacity(0.4), radius: 4)
                         Text("\(subject.displayName) — Overtime")
                             .font(.headline)
                         Spacer()
@@ -188,29 +187,35 @@ struct MenuContentView: View {
                             .controlSize(.small)
                     }
                     Text(TimeFormatting.formatDuration(sessionManager.elapsedTime, showSeconds: sessionManager.showSeconds))
-                        .font(.system(.title2, design: .monospaced))
+                        .font(.system(.title, design: .monospaced))
+                        .fontWeight(.light)
                         .foregroundStyle(.yellow)
                 }
 
             case .onBreak(let nextSubject, _):
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("☕")
                         Text("On Break")
                             .font(.headline)
                         Spacer()
                     }
-                    Text("\(TimeFormatting.formatDuration(max(0, sessionManager.breakTimeRemaining), showSeconds: sessionManager.showSeconds)) until \(nextSubject)")
-                        .font(.system(.subheadline, design: .monospaced))
+                    Text(TimeFormatting.formatDuration(max(0, sessionManager.breakTimeRemaining), showSeconds: sessionManager.showSeconds))
+                        .font(.system(.title, design: .monospaced))
+                        .fontWeight(.light)
                         .foregroundStyle(.secondary)
+                    Text("until \(nextSubject)")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
                 }
 
             case .pendingStart(let subjectName, _):
                 let subject = Subject.from(rawValue: subjectName)
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Image(systemName: "exclamationmark.circle.fill")
                             .foregroundStyle(.orange)
+                            .shadow(color: .orange.opacity(0.4), radius: 4)
                         Text("\(subject.displayName) Scheduled")
                             .font(.headline)
                         Spacer()
@@ -223,14 +228,22 @@ struct MenuContentView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.regular)
+                    .tint(subject.color)
                 }
 
             case .idle:
-                HStack {
-                    Image(systemName: "pause.circle")
-                        .foregroundStyle(.secondary)
-                    Text("No active session")
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Image(systemName: "circle.dashed")
+                        .foregroundStyle(.tertiary)
+                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("No active session")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text("Click a subject to start")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
                     Spacer()
                 }
             }
@@ -257,62 +270,158 @@ struct MenuContentView: View {
         let blocks = scheduleStore.todayBlocks().filter { $0.subject == subject.rawValue }
         let scheduledDuration = blocks.reduce(0) { $0 + $1.durationInterval }
 
+        // Build schedule time string for this subject
+        let scheduleTimeStr: String? = {
+            guard let first = blocks.first else { return nil }
+            let start = TimeFormatting.formatTime(hour: first.startHour, minute: first.startMinute)
+            let last = blocks.last!
+            let end = TimeFormatting.formatTime(hour: last.endHour, minute: last.endMinute)
+            return "\(start) – \(end)"
+        }()
+
         return Button {
             sessionManager.toggleSession(subject: subject)
         } label: {
             HStack(spacing: 8) {
                 Text(subject.emoji)
-                Text(subject.displayName)
-                    .fontWeight(isActive ? .semibold : .regular)
+                    .font(.subheadline)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(subject.displayName)
+                        .font(.subheadline)
+                        .fontWeight(isActive ? .semibold : .regular)
+                    if let timeStr = scheduleTimeStr {
+                        Text(timeStr)
+                            .font(.system(.caption2, design: .monospaced))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+
                 Spacer()
 
-                if isActive {
-                    Text(TimeFormatting.formatDuration(sessionManager.elapsedTime, showSeconds: sessionManager.showSeconds))
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(isOvertime ? .yellow : subject.color)
-                } else if todayDuration > 0 {
-                    Text(TimeFormatting.formatDuration(todayDuration))
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("—")
-                        .foregroundStyle(.quaternary)
-                }
+                VStack(alignment: .trailing, spacing: 1) {
+                    if isActive {
+                        Text(TimeFormatting.formatDuration(sessionManager.elapsedTime, showSeconds: sessionManager.showSeconds))
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(isOvertime ? .yellow : subject.color)
+                            .shadow(color: (isOvertime ? Color.yellow : subject.color).opacity(0.3), radius: 3)
+                    } else if todayDuration > 0 {
+                        Text(TimeFormatting.formatDuration(todayDuration))
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("—")
+                            .font(.caption)
+                            .foregroundStyle(.quaternary)
+                    }
 
-                if scheduledDuration > 0 {
-                    Text("/ \(TimeFormatting.formatDuration(scheduledDuration))")
-                        .font(.system(.caption2, design: .monospaced))
-                        .foregroundStyle(.tertiary)
+                    if scheduledDuration > 0 {
+                        Text("/ \(TimeFormatting.formatDuration(scheduledDuration))")
+                            .font(.system(.caption2, design: .monospaced))
+                            .foregroundStyle(.tertiary)
+                    }
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
             .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isActive ? (isOvertime ? Color.yellow.opacity(0.12) : subject.color.opacity(0.15)) : Color.clear)
+                RoundedRectangle(cornerRadius: 8)
+                    .fill({
+                        if isActive {
+                            return isOvertime ? Color.yellow.opacity(0.15) : subject.color.opacity(0.15)
+                        } else if sessionManager.coloredRows {
+                            return subject.color.opacity(0.06)
+                        } else {
+                            return Color.clear
+                        }
+                    }())
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(
+                                {
+                                    if isActive {
+                                        return isOvertime ? Color.yellow.opacity(0.25) : subject.color.opacity(0.25)
+                                    } else if sessionManager.coloredRows {
+                                        return subject.color.opacity(0.1)
+                                    } else {
+                                        return Color.clear
+                                    }
+                                }(),
+                                lineWidth: 0.5
+                            )
+                    )
             )
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(GlassButtonStyle())
         .disabled(isInterview)
-        .opacity(isInterview ? 0.4 : 1)
+        .opacity(isInterview ? 0.35 : 1)
+    }
+
+    // MARK: - Date/Time Helpers
+
+    private func currentDateString() -> String {
+        let f = DateFormatter()
+        f.dateFormat = "EEE, MMM d"
+        return f.string(from: Date())
+    }
+
+    private func currentTimeString() -> String {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f.string(from: Date())
     }
 
     // MARK: - Today's Stats
 
     private var todayStats: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Today")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            HStack {
-                Text("Total")
-                Spacer()
-                Text(TimeFormatting.formatDuration(sessionManager.todayTotalDuration()))
-                    .font(.system(.subheadline, design: .monospaced))
-                    .fontWeight(.medium)
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("TODAY")
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.tertiary)
+                    .tracking(1.5)
+                Text("Total Study Time")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
+            Spacer()
+            Text(TimeFormatting.formatDuration(sessionManager.todayTotalDuration()))
+                .font(.system(.title3, design: .monospaced))
+                .fontWeight(.medium)
         }
+    }
+}
+
+// MARK: - Glass Button Style
+
+struct GlassButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(configuration.isPressed ? Color.primary.opacity(0.08) : Color.clear)
+            )
+    }
+}
+
+// MARK: - NSVisualEffectView Wrapper
+
+struct VisualEffectBackground: NSViewRepresentable {
+    let material: NSVisualEffectView.Material
+    let blendingMode: NSVisualEffectView.BlendingMode
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blendingMode
+        view.state = .active
+        view.isEmphasized = true
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
     }
 }

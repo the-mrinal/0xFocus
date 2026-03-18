@@ -24,6 +24,17 @@ struct WeeklySummaryView: View {
     }
 
     var body: some View {
+        ZStack {
+            VisualEffectBackground(material: .sidebar, blendingMode: .behindWindow)
+                .ignoresSafeArea()
+
+            innerContent
+        }
+        .frame(minWidth: 400, minHeight: 300)
+        .onAppear { loadWeekSessions() }
+    }
+
+    private var innerContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Weekly Summary")
                 .font(.title2)
@@ -71,10 +82,9 @@ struct WeeklySummaryView: View {
                         }
                     }
                 }
+                .scrollContentBackground(.hidden)
             }
         }
-        .frame(minWidth: 400, minHeight: 300)
-        .onAppear { loadWeekSessions() }
     }
 
     private func loadWeekSessions() {

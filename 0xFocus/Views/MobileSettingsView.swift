@@ -6,6 +6,16 @@ struct MobileSettingsView: View {
     @State private var testSent = false
 
     var body: some View {
+        ZStack {
+            VisualEffectBackground(material: .sidebar, blendingMode: .behindWindow)
+                .ignoresSafeArea()
+
+            mobileContent
+        }
+        .frame(minWidth: 450, minHeight: 380)
+    }
+
+    private var mobileContent: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Mobile Notifications")
                 .font(.title2)
@@ -86,6 +96,50 @@ struct MobileSettingsView: View {
             Spacer()
         }
         .padding()
-        .frame(minWidth: 450, minHeight: 380)
+    }
+}
+
+// Inline version for embedding in Settings tab
+struct MobileSettingsInline: View {
+    @State private var enabled: Bool = NotificationService.shared.mobileNotificationsEnabled
+    @State private var topic: String = NotificationService.shared.ntfyTopic
+    @State private var testSent = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle("Enable mobile notifications (via ntfy.sh)", isOn: $enabled)
+                .onChange(of: enabled) { _, newValue in
+                    NotificationService.shared.mobileNotificationsEnabled = newValue
+                }
+
+            HStack {
+                Text("ntfy.sh/")
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                TextField("your-secret-topic", text: $topic)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.body, design: .monospaced))
+                    .onChange(of: topic) { _, newValue in
+                        NotificationService.shared.ntfyTopic = newValue
+                    }
+            }
+
+            HStack {
+                Button("Send Test") {
+                    NotificationService.shared.sendTestMobileNotification()
+                    testSent = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) { testSent = false }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(topic.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                if testSent {
+                    Text("Sent! Check your phone.")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+            }
+        }
     }
 }

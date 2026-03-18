@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ScheduleEditorWindow: View {
     @Environment(ScheduleStore.self) private var scheduleStore
+    @Environment(SessionManager.self) private var sessionManager
     @Environment(\.dismiss) private var dismiss
 
     @State private var editingBlocks: [ScheduleBlock] = []
@@ -12,64 +13,159 @@ struct ScheduleEditorWindow: View {
     @State private var selectedTab = 0
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Tab picker
-            Picker("", selection: $selectedTab) {
-                Text("Daily Schedule").tag(0)
-                Text("Interviews").tag(1)
-                Text("Import / Export").tag(2)
-            }
-            .pickerStyle(.segmented)
-            .padding()
+        ZStack {
+            VisualEffectBackground(material: .sidebar, blendingMode: .behindWindow)
+                .ignoresSafeArea()
 
-            Divider()
+            VStack(spacing: 0) {
+                Picker("", selection: $selectedTab) {
+                    Text("Schedule").tag(0)
+                    Text("Interviews").tag(1)
+                    Text("Import / Export").tag(2)
+                    Text("Summary").tag(3)
+                    Text("Settings").tag(4)
+                }
+                .pickerStyle(.segmented)
+                .padding()
 
-            switch selectedTab {
-            case 0:
-                scheduleTab
-            case 1:
-                interviewsTab
-            case 2:
-                importExportTab
-            default:
-                EmptyView()
-            }
+                switch selectedTab {
+                case 0:
+                    scheduleTab
+                case 1:
+                    interviewsTab
+                case 2:
+                    importExportTab
+                case 3:
+                    WeeklySummaryView()
+                case 4:
+                    settingsTab
+                default:
+                    EmptyView()
+                }
 
-            Divider()
+                // Footer (only for schedule/interview tabs)
+                if selectedTab <= 2 {
+                    HStack {
+                        if selectedTab == 0 {
+                            Button("Reset to Default") {
+                                editingBlocks = ScheduleBlock.defaultSchedule()
+                                editingInterviews = []
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.secondary)
+                        }
 
-            // Footer
-            HStack {
-                if selectedTab == 0 {
-                    Button("Reset to Default") {
-                        editingBlocks = ScheduleBlock.defaultSchedule()
-                        editingInterviews = []
+                        Spacer()
+
+                        Button("Cancel") {
+                            dismiss()
+                        }
+
+                        Button("Save") {
+                            scheduleStore.blocks = editingBlocks
+                            scheduleStore.save()
+                            scheduleStore.interviewBlocks = editingInterviews
+                            scheduleStore.saveInterviews()
+                            dismiss()
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
+                    .padding()
+                    .background(.ultraThinMaterial)
                 }
-
-                Spacer()
-
-                Button("Cancel") {
-                    dismiss()
-                }
-
-                Button("Save") {
-                    scheduleStore.blocks = editingBlocks
-                    scheduleStore.save()
-                    scheduleStore.interviewBlocks = editingInterviews
-                    scheduleStore.saveInterviews()
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
             }
-            .padding()
         }
-        .frame(minWidth: 550, minHeight: 450)
+        .frame(minWidth: 580, minHeight: 500)
         .onAppear {
             editingBlocks = scheduleStore.blocks
             editingInterviews = scheduleStore.interviewBlocks
         }
+    }
+
+    // MARK: - Settings Tab
+
+    private var settingsTab: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Display section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("DISPLAY")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .tracking(1.5)
+
+                        Toggle("Show seconds in timer", isOn: Binding(
+                            get: { sessionManager.showSeconds },
+                            set: { _ in sessionManager.toggleShowSeconds() }
+                        ))
+
+                        Toggle("Colored subject rows", isOn: Binding(
+                            get: { sessionManager.coloredRows },
+                            set: { _ in sessionManager.toggleColoredRows() }
+                        ))
+                    }
+
+                    Divider()
+
+                    // Mobile notifications section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("MOBILE NOTIFICATIONS")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .tracking(1.5)
+
+                        MobileSettingsInline()
+                    }
+
+                    Divider()
+
+                    // Data section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("DATA")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .tracking(1.5)
+
+                        Button {
+                            exportAndReset()
+                        } label: {
+                            Label("Export Data & Reset", systemImage: "arrow.counterclockwise")
+                        }
+                        .buttonStyle(.bordered)
+
+                        Text("Exports all session history to CSV, then clears everything for a fresh start.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .padding()
+            }
+        }
+    }
+
+    private func exportAndReset() {
+        let alert = NSAlert()
+        alert.messageText = "Export & Reset All Data"
+        alert.informativeText = "This will export all session history to a CSV file and then clear all data for a fresh start."
+        alert.addButton(withTitle: "Export & Reset")
+        alert.addButton(withTitle: "Cancel")
+        alert.alertStyle = .warning
+
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        let csv = sessionManager.exportToCSV()
+
+        let savePanel = NSSavePanel()
+        savePanel.title = "Export Session Data"
+        savePanel.nameFieldStringValue = "0xFocus-sessions.csv"
+        savePanel.allowedContentTypes = [.commaSeparatedText]
+
+        if savePanel.runModal() == .OK, let url = savePanel.url {
+            try? csv.write(to: url, atomically: true, encoding: .utf8)
+        }
+
+        sessionManager.resetAllData()
     }
 
     // MARK: - Schedule Tab
@@ -109,6 +205,7 @@ struct ScheduleEditorWindow: View {
                         editingBlocks.remove(atOffsets: indexSet)
                     }
                 }
+                .scrollContentBackground(.hidden)
             }
         }
         .sheet(isPresented: $showingAddSheet) {
@@ -173,7 +270,7 @@ struct ScheduleEditorWindow: View {
 
                             Spacer()
 
-                            Text("\(interview.durationMinutes)m")
+                            Text(TimeFormatting.formatDuration(TimeInterval(interview.durationMinutes * 60)))
                                 .font(.caption)
                                 .foregroundStyle(.tertiary)
                         }
@@ -183,6 +280,7 @@ struct ScheduleEditorWindow: View {
                         editingInterviews.remove(atOffsets: indexSet)
                     }
                 }
+                .scrollContentBackground(.hidden)
             }
         }
         .sheet(isPresented: $showingAddInterviewSheet) {
@@ -400,8 +498,8 @@ struct ScheduleRowView: View {
 
             Spacer()
 
-            Text("\(block.durationMinutes)m")
-                .font(.caption)
+            Text(TimeFormatting.formatDuration(block.durationInterval))
+                .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 4)

@@ -84,7 +84,12 @@ final class ScheduleStore {
     }
 
     func todayBlocks() -> [ScheduleBlock] {
-        blocks.sorted { ($0.startHour * 60 + $0.startMinute) < ($1.startHour * 60 + $1.startMinute) }
+        // Treat blocks before 5 AM as late-night (sort after everything else)
+        func sortKey(_ b: ScheduleBlock) -> Int {
+            let minutes = b.startHour * 60 + b.startMinute
+            return minutes < 300 ? minutes + 1440 : minutes
+        }
+        return blocks.sorted { sortKey($0) < sortKey($1) }
     }
 
     /// All unique subjects from the schedule, in schedule order

@@ -65,13 +65,15 @@ struct MenuContentView: View {
             }
 
             // Subject list
-            VStack(spacing: 4) {
-                ForEach(scheduleStore.todayBlocks()) { block in
-                    blockRow(block)
+            ScrollView {
+                VStack(spacing: 4) {
+                    ForEach(scheduleStore.todayBlocks()) { block in
+                        blockRow(block)
+                    }
                 }
+                .padding(.vertical, 4)
+                .padding(.horizontal, 4)
             }
-            .padding(.vertical, 4)
-            .padding(.horizontal, 4)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal, 8)
 
@@ -103,7 +105,6 @@ struct MenuContentView: View {
         }
         .frame(width: 310)
         .frame(maxHeight: 600)
-        .fixedSize(horizontal: false, vertical: true)
         .background(
             VisualEffectBackground(material: .popover, blendingMode: .behindWindow)
         )
